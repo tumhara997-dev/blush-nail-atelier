@@ -27,10 +27,10 @@ export default async function HomePage() {
   const next = quickest ? await findNextFreeSlot(quickest) : null;
   const nextLabel = next ? `${next.dayOffset === 0 ? "Today" : next.dayOffset === 1 ? "Tomorrow" : new Intl.DateTimeFormat("en-IN", { weekday: "long", timeZone: "Asia/Kolkata" }).format(next.startsAt)}, ${formatHm(next.time)}` : null;
 
-  const hero = pick(gallery, "bow", 4);
-  const heroSmall = pick(gallery, "floral french", 6);
-  const bridal = pick(gallery, "burgundy", 7);
-  const bridal2 = pick(gallery, "pastel floral", 8);
+  const hero = pick(gallery, "white bow", 3);
+  const heroSmall = pick(gallery, "blossoms", 2);
+  const bridal = pick(gallery, "burgundy", 0);
+  const bridal2 = pick(gallery, "crystals", 4);
   const featured = gallery.filter((g) => g.isFeatured).slice(0, 8);
   const custom = services.find((s) => s.slug === "custom-nail-art");
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";

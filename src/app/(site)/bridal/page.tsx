@@ -23,7 +23,7 @@ export default async function BridalPage() {
   const [gallery, catalog, { salon }] = await Promise.all([getGallery(), getCatalog(), getSettings("salon")]);
   const custom = catalog.flatMap((c) => c.services).find((s) => s.slug === "custom-nail-art");
   const consultHref = custom ? `/book?service=${custom.id}&note=${encodeURIComponent("Bridal / festive consultation — event date: ")}` : "/book";
-  const photos = ["burgundy", "pastel floral", "bow", "floral french"].map((c, i) => gallery.find((g) => g.caption.toLowerCase().includes(c)) ?? gallery[i]).filter(Boolean);
+  const photos = ["burgundy", "crystals", "blossoms", "butter-yellow"].map((c, i) => gallery.find((g) => g.caption.toLowerCase().includes(c)) ?? gallery[i]).filter(Boolean);
 
   return (
     <>

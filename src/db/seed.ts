@@ -79,17 +79,18 @@ async function main() {
 
     const dir = path.resolve("seed-assets/gallery");
     const files = await readdir(dir).catch(() => [] as string[]);
+    // Captions written from what each photo actually shows. Order = gallery order (first 8 are featured on the home page).
     const meta: Record<string, { caption: string; style: string | null; cover?: boolean }> = {
-      "classic-black-manicure": { caption: "Classic black manicure", style: null },
-      "pink-french-pedicure": { caption: "Pink French pedicure", style: "French Art", cover: true },
-      "leopard-nail-art": { caption: "Leopard nail art", style: "Animal Print", cover: true },
-      "tricolour-nail-art": { caption: "Tricolour nail art", style: "Custom Nail Art" },
-      "soft-nude-bow-design": { caption: "Soft nude bow design", style: "3D & Bridal Art", cover: true },
-      "chocolate-french-tips": { caption: "Chocolate French tips", style: "French Art" },
-      "floral-french-details": { caption: "Floral French details", style: "Stones & Floral", cover: true },
-      "burgundy-french-extensions": { caption: "Burgundy French extensions", style: "French Art" },
-      "pastel-floral-nail-art": { caption: "Pastel floral nail art", style: "Dry Flower", cover: true },
-      "glossy-pink-nail-set": { caption: "Glossy pink nail set", style: "Custom Nail Art", cover: true },
+      "burgundy-gold-french": { caption: "Burgundy French tips with gold lining", style: "French Art", cover: true },
+      "butter-yellow-french-flowers": { caption: "Butter-yellow French with flowers & gold", style: "French Art" },
+      "white-french-painted-blossoms": { caption: "White French with painted blossoms", style: "Stones & Floral", cover: true },
+      "nude-french-white-bow": { caption: "Nude French with a white bow", style: "French Art" },
+      "nude-almond-crystals": { caption: "Nude almond set with crystals", style: "Stones & Floral" },
+      "red-leopard-crystal-extensions": { caption: "Red leopard extensions with crystals", style: "Animal Print", cover: true },
+      "caramel-tortoiseshell-french": { caption: "Caramel tortoiseshell & brown French", style: "Animal Print" },
+      "independence-day-tricolour": { caption: "Independence Day tricolour art", style: "Custom Nail Art", cover: true },
+      "hot-pink-french-pedicure": { caption: "Hot pink French pedicure", style: "French Art" },
+      "classic-black-gel": { caption: "Classic black gel polish", style: null },
     };
     let i = 0;
     for (const [slug, m] of Object.entries(meta)) {
