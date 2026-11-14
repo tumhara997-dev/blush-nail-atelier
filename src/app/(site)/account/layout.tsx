@@ -9,7 +9,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="eyebrow">My account</div>
-          <h1 className="h-display mt-1 text-3xl">Hi {user.name?.split(" ")[0] ?? "there"} 💗</h1>
+          <h1 className="h-display mt-1 text-[40px] leading-none">Hello, <em className="font-normal text-rose">{user.name?.split(" ")[0] ?? "there"}</em></h1>
         </div>
         <nav aria-label="Account" className="flex flex-wrap items-center gap-2">
           <Link href="/account" className="btn-ghost btn-sm">Appointments</Link>

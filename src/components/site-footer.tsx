@@ -1,33 +1,52 @@
 import Link from "next/link";
 import type { SalonSettings } from "@/server/settings";
 import { formatPhone, whatsappLink } from "@/lib/phone";
+import { Bow } from "./ornaments";
 
 export function SiteFooter({ salon }: { salon: SalonSettings }) {
+  const col = "flex flex-col gap-2.5 text-[14px]";
+  const head = "mb-2 text-[11px] uppercase tracking-[0.24em] text-gold";
   return (
-    <footer className="mt-10 border-t border-line">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm text-muted sm:grid-cols-3 sm:px-6">
-        <div>
-          <div className="font-serif text-xl font-bold tracking-[4px] text-rose">{salon.name}</div>
-          <p className="mt-2">{salon.tagline}</p>
-          {salon.address && <p className="mt-2 whitespace-pre-line">{salon.address}</p>}
+    <footer className="mt-24 bg-plum text-[#ecdcd6]">
+      <div className="mx-auto max-w-7xl px-5 pb-10 pt-16 sm:px-8">
+        <div className="flex flex-col items-center text-center">
+          <Bow className="h-7 w-11 text-gold" />
+          <div className="mt-4 font-serif text-[56px] font-medium leading-none tracking-[0.3em] text-[#f6e8e5] sm:text-[80px]">{salon.name}</div>
+          <p className="mt-3 font-serif text-xl italic text-[#d9c2bb]">little details, beautifully done</p>
+          <Link href="/book" className="btn mt-8 bg-[#f6e8e5] text-plum hover:bg-white">Book your appointment</Link>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <span className="font-bold text-ink">Visit</span>
-          <Link href="/services" className="hover:text-pink">Services & prices</Link>
-          <Link href="/book" className="hover:text-pink">Book an appointment</Link>
-          <Link href="/account" className="hover:text-pink">My appointments</Link>
-          <Link href="/contact" className="hover:text-pink">Contact & directions</Link>
+
+        <div className="mt-16 grid gap-10 border-t border-white/10 pt-10 sm:grid-cols-3">
+          <div className={col}>
+            <div className={head}>Visit</div>
+            {salon.address ? <p className="whitespace-pre-line leading-6">{salon.address}</p> : <p>By appointment</p>}
+            <Link href="/contact" className="hover:text-white">Hours & directions</Link>
+          </div>
+          <div className={col}>
+            <div className={head}>Explore</div>
+            <Link href="/services" className="hover:text-white">Menu & prices</Link>
+            <Link href="/bridal" className="hover:text-white">Bridal & festive</Link>
+            <Link href="/gallery" className="hover:text-white">Gallery</Link>
+            <Link href="/account" className="hover:text-white">My appointments</Link>
+          </div>
+          <div className={col}>
+            <div className={head}>Say hello</div>
+            {salon.whatsapp && <a href={whatsappLink(salon.whatsapp)} target="_blank" rel="noopener" className="hover:text-white">WhatsApp {formatPhone(salon.whatsapp)}</a>}
+            {salon.phone && <a href={`tel:${salon.phone}`} className="hover:text-white">Call {formatPhone(salon.phone)}</a>}
+            {salon.instagram && <a href={salon.instagram} target="_blank" rel="noopener" className="hover:text-white">Instagram</a>}
+            {salon.email && <a href={`mailto:${salon.email}`} className="hover:text-white">{salon.email}</a>}
+            <Link href="/contact" className="hover:text-white">Send us a message</Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <span className="font-bold text-ink">Contact</span>
-          {salon.phone && <a href={`tel:${salon.phone}`} className="hover:text-pink">{formatPhone(salon.phone)}</a>}
-          {salon.whatsapp && <a href={whatsappLink(salon.whatsapp)} className="hover:text-pink" rel="noopener" target="_blank">WhatsApp us</a>}
-          {salon.instagram && <a href={salon.instagram} className="hover:text-pink" rel="noopener" target="_blank">Instagram</a>}
-          <Link href="/policies/privacy" className="hover:text-pink">Privacy policy</Link>
-          <Link href="/policies/cancellation" className="hover:text-pink">Cancellation policy</Link>
+
+        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-[11px] uppercase tracking-[0.18em] text-[#b9a29c] sm:flex-row">
+          <span>© {new Date().getFullYear()} {salon.name} Nail Atelier</span>
+          <span className="flex gap-6">
+            <Link href="/policies/privacy" className="hover:text-white">Privacy</Link>
+            <Link href="/policies/cancellation" className="hover:text-white">Cancellation</Link>
+          </span>
         </div>
       </div>
-      <p className="pb-8 text-center text-xs text-[#947b86]">© {new Date().getFullYear()} {salon.name} • Nail Services & Art</p>
     </footer>
   );
 }

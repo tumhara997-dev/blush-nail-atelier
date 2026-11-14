@@ -24,15 +24,17 @@ type Props = {
   categories: WizardCategory[];
   days: Day[];
   initialServiceId?: string;
+  initialNote?: string;
+  initialLook?: { id: string; caption: string; mediaId: string } | null;
   user: { name: string | null } | null;
   cancelWindowHours: number;
 };
 
 function Step({ n, title, done, children }: { n: number; title: string; done?: boolean; children: React.ReactNode }) {
   return (
-    <section className="card p-5" aria-labelledby={`step-${n}`}>
-      <h2 id={`step-${n}`} className="mb-4 flex items-center gap-3 font-serif text-xl text-plum">
-        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full font-sans text-sm font-bold ${done ? "bg-pink text-white" : "bg-pale text-rose"}`}>{done ? "✓" : n}</span>
+    <section className="card p-5 sm:p-7" aria-labelledby={`step-${n}`}>
+      <h2 id={`step-${n}`} className="mb-5 flex items-center gap-3 font-serif text-[26px] font-medium text-plum">
+        <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border font-sans text-[12px] ${done ? "border-plum bg-plum text-cream" : "border-gold text-gold"}`}>{done ? "✓" : n}</span>
         {title}
       </h2>
       {children}
@@ -40,7 +42,7 @@ function Step({ n, title, done, children }: { n: number; title: string; done?: b
   );
 }
 
-export function BookingWizard({ categories, days, initialServiceId, user, cancelWindowHours }: Props) {
+export function BookingWizard({ categories, days, initialServiceId, initialNote, initialLook, user, cancelWindowHours }: Props) {
   const router = useRouter();
   const all = useMemo(() => categories.flatMap((c) => c.services), [categories]);
   const [serviceId, setServiceId] = useState(all.some((s) => s.id === initialServiceId) ? initialServiceId! : "");
@@ -49,7 +51,8 @@ export function BookingWizard({ categories, days, initialServiceId, user, cancel
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [slots, setSlots] = useState<{ loading: boolean; times: string[]; closed: boolean; error?: string }>({ loading: false, times: [], closed: false });
-  const [note, setNote] = useState("");
+  const [look, setLook] = useState(initialLook ?? null);
+  const [note, setNote] = useState(initialNote ?? (initialLook ? `Inspired by “${initialLook.caption}” from your gallery. ` : ""));
   const [files, setFiles] = useState<File[]>([]);
   const [loggedIn, setLoggedIn] = useState(!!user);
   const [needsName, setNeedsName] = useState(!!user && !user.name);
@@ -119,6 +122,7 @@ export function BookingWizard({ categories, days, initialServiceId, user, cancel
       fd.set("date", date);
       fd.set("time", time);
       if (note.trim()) fd.set("note", note.trim());
+      if (look) fd.set("lookId", look.id);
       files.forEach((f) => fd.append("photos", f));
       const res = await createBooking(fd);
       if (!res.ok) {
@@ -134,11 +138,23 @@ export function BookingWizard({ categories, days, initialServiceId, user, cancel
 
   return (
     <div className="space-y-4">
+      {look && (
+        <div className="card flex items-center gap-4 p-3 pr-5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`/media/${look.mediaId}`} alt="" className="h-20 w-16 rounded-xl object-cover" />
+          <div className="flex-1">
+            <div className="text-[11px] uppercase tracking-[0.2em] text-gold">Your reference look</div>
+            <div className="font-serif text-xl text-plum">{look.caption}</div>
+            <div className="text-xs text-muted">We&apos;ll attach this photo to your booking.</div>
+          </div>
+          <button type="button" className="text-xs text-muted underline hover:text-rose" onClick={() => setLook(null)}>Remove</button>
+        </div>
+      )}
       <Step n={1} title="Choose a service" done={!!service}>
         <div className="space-y-5">
           {categories.map((c) => (
             <div key={c.id}>
-              <div className="mb-2 text-xs font-bold uppercase tracking-wider text-muted">{c.name}</div>
+              <div className="mb-3 text-[11px] uppercase tracking-[0.24em] text-gold">{c.name}</div>
               <div className="grid gap-2 sm:grid-cols-2">
                 {c.services.map((s) => {
                   const on = s.id === serviceId;
@@ -148,12 +164,12 @@ export function BookingWizard({ categories, days, initialServiceId, user, cancel
                       type="button"
                       aria-pressed={on}
                       onClick={() => chooseService(s.id)}
-                      className={`flex items-start gap-3 rounded-xl border p-3 text-left transition ${on ? "border-pink bg-pale ring-2 ring-pink/25" : "border-line bg-white hover:border-pink/60"}`}
+                      className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 text-left transition ${on ? "border-plum bg-pale" : "border-line bg-white hover:border-plum/30"}`}
                     >
-                      <span className="text-2xl" aria-hidden>{s.emoji ?? "💅"}</span>
+                      <span className={`mt-1.5 h-3.5 w-3.5 shrink-0 rounded-full border ${on ? "border-plum bg-plum shadow-[inset_0_0_0_2px_#fff]" : "border-muted/50"}`} aria-hidden />
                       <span className="flex-1">
-                        <span className="block text-sm font-bold text-plum">{s.name}</span>
-                        <span className="block text-xs text-muted">{priceLabel(s)} · ~{s.durationMin} min</span>
+                        <span className="block font-serif text-[19px] leading-tight text-plum">{s.name}</span>
+                        <span className="mt-0.5 block text-xs text-muted">{priceLabel(s)} · ~{s.durationMin} min</span>
                       </span>
                     </button>
                   );

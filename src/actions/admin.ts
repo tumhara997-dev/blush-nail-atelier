@@ -365,6 +365,7 @@ export async function adminSaveSettings(_prev: ActionState, form: FormData): Pro
       mapEmbedUrl: /^https:\/\/(www\.)?google\.com\/maps\/embed/.test(str(form, "mapEmbedUrl")) ? str(form, "mapEmbedUrl") : "",
       instagram: url("instagram"),
       googleReviewsUrl: url("googleReviewsUrl"),
+      announcement: str(form, "announcement").slice(0, 140),
     });
   } else if (section === "booking") {
     const n = (k: string, min: number, max: number, def: number) => Math.min(max, Math.max(min, int(form, k, def)));

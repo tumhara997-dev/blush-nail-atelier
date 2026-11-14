@@ -6,6 +6,7 @@ import { formatDateTime } from "@/lib/time";
 import { STATUS_LABEL } from "@/lib/appointment-status";
 import { getSettings } from "@/server/settings";
 import { whatsappLink } from "@/lib/phone";
+import { Bow } from "@/components/ornaments";
 
 export default async function ConfirmedPage({ params }: { params: Promise<{ ref: string }> }) {
   const { ref } = await params;
@@ -17,8 +18,9 @@ export default async function ConfirmedPage({ params }: { params: Promise<{ ref:
 
   return (
     <div className="mx-auto max-w-lg px-4 py-14 text-center">
-      <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-pale text-3xl" aria-hidden>{confirmed ? "💖" : "📨"}</div>
-      <h1 className="h-display mt-4 text-3xl">{confirmed ? "You're booked!" : "Request sent!"}</h1>
+      <Bow className="mx-auto h-8 w-12 text-gold" />
+      <div className="eyebrow mt-5">{confirmed ? "Confirmed" : "Request received"}</div>
+      <h1 className="h-display mt-3 text-[44px] leading-none">{confirmed ? <>You&apos;re <em className="font-normal text-rose">booked.</em></> : <>Request <em className="font-normal text-rose">sent.</em></>}</h1>
       <p className="mt-2 text-muted">
         {confirmed
           ? "We've sent the details to your WhatsApp. See you soon!"

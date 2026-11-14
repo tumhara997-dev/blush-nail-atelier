@@ -12,6 +12,7 @@ export type SalonSettings = {
   mapLink: string;
   instagram: string;
   googleReviewsUrl: string;
+  announcement: string; // thin bar above the header, e.g. a seasonal message; empty = hidden
 };
 
 export type BookingSettings = {
@@ -37,6 +38,7 @@ export const DEFAULT_SETTINGS: { salon: SalonSettings; booking: BookingSettings;
     mapLink: "",
     instagram: "",
     googleReviewsUrl: "",
+    announcement: "Bridal & festive season — reserve your date early",
   },
   booking: {
     slotStepMin: 30,

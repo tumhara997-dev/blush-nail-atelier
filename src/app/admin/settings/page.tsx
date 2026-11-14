@@ -49,6 +49,7 @@ export default async function SettingsPage() {
         <Field label="Google Maps link" name="mapLink" value={salon.mapLink} wide />
         <Field label="Google Maps embed URL" name="mapEmbedUrl" value={salon.mapEmbedUrl} wide hint="Google Maps → Share → Embed a map → copy only the src URL (starts with https://www.google.com/maps/embed)." />
         <Field label="Google reviews URL" name="googleReviewsUrl" value={salon.googleReviewsUrl} wide />
+        <Field label="Announcement bar (top of every page)" name="announcement" value={salon.announcement} wide hint="Seasonal message, e.g. “Diwali nail art now booking”. Leave empty to hide the bar." />
         <div className="sm:col-span-2"><Submit>Save salon details</Submit></div>
       </ActionForm>
 

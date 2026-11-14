@@ -27,6 +27,17 @@ type Options = {
 
 export type DayAvailability = { date: string; closed: boolean; slots: Slot[] };
 
+/** Earliest bookable start for a service within the next `days` days (for the "next free appointment" badge). */
+export async function findNextFreeSlot(service: { id: string; durationMin: number; bufferMin: number }, days = 14) {
+  const today = salonDateString();
+  for (let i = 0; i < days; i++) {
+    const date = addDays(today, i);
+    const day = await getDayAvailability({ serviceId: service.id, durationMin: service.durationMin, bufferMin: service.bufferMin, date });
+    if (day.slots.length) return { date, time: day.slots[0].time, startsAt: new Date(day.slots[0].startsAt), dayOffset: i };
+  }
+  return null;
+}
+
 export async function getDayAvailability(o: Options): Promise<DayAvailability> {
   const { booking } = await getSettings("booking");
   const today = salonDateString();

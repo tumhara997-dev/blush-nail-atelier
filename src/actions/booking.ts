@@ -1,9 +1,11 @@
 "use server";
 
 import { z } from "zod";
+import { and, eq } from "drizzle-orm";
+import { db, schema } from "@/db";
 import { getCurrentUser } from "@/server/auth";
 import { createAppointment } from "@/server/appointments";
-import { checkUpload, saveUpload } from "@/server/media";
+import { checkUpload, readMediaFile, saveImageBuffer, saveUpload } from "@/server/media";
 import { isValidDateString } from "@/lib/time";
 import { rateLimited } from "@/server/rate-limit";
 
@@ -52,6 +54,23 @@ export async function createBooking(form: FormData): Promise<BookingResult> {
       await saveUpload(p, "INSPIRATION", { ownerId: user.id, appointmentId: res.value.id });
     } catch (e) {
       console.error("Inspiration upload failed", e); // booking still stands; customer can share on WhatsApp
+    }
+  }
+
+  // "Book this look": copy the chosen published gallery photo onto the booking as a reference for staff.
+  const lookId = z.string().uuid().safeParse(form.get("lookId"));
+  if (lookId.success) {
+    try {
+      const [g] = await db()
+        .select({ path: schema.media.path })
+        .from(schema.galleryItems)
+        .innerJoin(schema.media, eq(schema.media.id, schema.galleryItems.mediaId))
+        .where(and(eq(schema.galleryItems.id, lookId.data), eq(schema.galleryItems.isPublished, true)))
+        .limit(1);
+      const file = g ? await readMediaFile(g.path) : null;
+      if (file) await saveImageBuffer(file, "INSPIRATION", { ownerId: user.id, appointmentId: res.value.id });
+    } catch (e) {
+      console.error("Reference look copy failed", e);
     }
   }
   return { ok: true, ref: res.value.ref };
