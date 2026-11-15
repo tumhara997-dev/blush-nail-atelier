@@ -16,6 +16,9 @@ export type Template =
 
 type Appt = typeof schema.appointments.$inferSelect;
 
+/** Prefix on users.staff_notes that marks sample/demo customers (see scripts/demo-data.ts). */
+export const DEMO_MARK = "[DEMO]";
+
 /** Message text (for logs/console) and the ordered template variables (for WhatsApp). */
 function render(template: Template, a: Appt, ctx: { name: string; service: string; salon: string; site: string }) {
   const when = `${formatDate(a.startsAt)} at ${formatTime(a.startsAt)}`;
@@ -75,12 +78,14 @@ export async function notifyAppointment(appointmentId: string, template: Templat
       salon: salon.name,
       site: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
     };
-    if (!row.u.deletedAt) {
+    // Demo customers (sample data for showing the admin) never receive real messages.
+    const isDemo = row.u.staffNotes?.startsWith(DEMO_MARK) ?? false;
+    if (!row.u.deletedAt && !isDemo) {
       const msg = render(template, row.a, ctx);
       await deliver({ userId: row.u.id, to: row.u.phone, template, ...msg });
     }
     const salonPhone = salon.whatsapp || process.env.OWNER_PHONE;
-    if (alsoAlertSalon && salonPhone) {
+    if (alsoAlertSalon && salonPhone && !isDemo) {
       const msg = render("staff_new_booking", row.a, ctx);
       await deliver({ userId: null, to: salonPhone, template: "staff_new_booking", ...msg });
     }
