@@ -1,6 +1,12 @@
 import {
-  pgTable, pgEnum, uuid, text, integer, boolean, timestamp, jsonb, primaryKey, index,
+  pgTable, pgEnum, uuid, text, integer, boolean, timestamp, jsonb, primaryKey, index, customType,
 } from "drizzle-orm/pg-core";
+
+/** Postgres bytea ↔ Node Buffer (postgres-js returns Buffer, PGlite returns Uint8Array). */
+const bytea = customType<{ data: Buffer; driverData: Buffer | Uint8Array }>({
+  dataType: () => "bytea",
+  fromDriver: (v) => (Buffer.isBuffer(v) ? v : Buffer.from(v)),
+});
 
 // ── Enums ────────────────────────────────────────────────────────────
 export const roleEnum = pgEnum("role", ["CUSTOMER", "STAFF", "ADMIN", "OWNER"]);
@@ -207,7 +213,10 @@ export const appointmentEvents = pgTable("appointment_events", {
 export const media = pgTable("media", {
   id: uuid("id").primaryKey().defaultRandom(),
   kind: mediaKindEnum("kind").notNull(),
-  path: text("path").notNull(), // relative to STORAGE_DIR
+  // Where the bytes live: `data` (uploads, stored in Postgres so it works on serverless hosts),
+  // or `path` starting with "/" = a static file in /public (seed photos); other paths = legacy local disk.
+  data: bytea("data"),
+  path: text("path"),
   mime: text("mime").notNull(),
   width: integer("width"),
   height: integer("height"),

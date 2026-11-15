@@ -1,12 +1,12 @@
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { getCurrentUser, isStaff } from "@/server/auth";
-import { readMediaFile } from "@/server/media";
+import { mediaBytes } from "@/server/media";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Serves stored photos. Gallery photos are public; inspiration photos only to their owner and staff. */
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!UUID.test(id)) return new Response("Not found", { status: 404 });
 
@@ -19,11 +19,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     if (!user || (user.id !== m.ownerId && !isStaff(user))) return new Response("Not found", { status: 404 });
   }
 
-  const file = await readMediaFile(m.path);
+  // Seed photos ship as public static files in /public — hand them to the CDN.
+  if (!m.data && m.path?.startsWith("/")) {
+    return new Response(null, { status: 308, headers: { Location: new URL(m.path, req.url).toString(), "Cache-Control": isPublic ? "public, max-age=31536000, immutable" : "private, max-age=3600" } });
+  }
+
+  const file = await mediaBytes(m);
   if (!file) return new Response("Not found", { status: 404 });
   return new Response(new Uint8Array(file), {
     headers: {
       "Content-Type": m.mime,
+      // Media ids never change content, so public photos can be cached forever by browsers and the CDN.
       "Cache-Control": isPublic ? "public, max-age=31536000, immutable" : "private, max-age=3600",
       "X-Content-Type-Options": "nosniff",
     },

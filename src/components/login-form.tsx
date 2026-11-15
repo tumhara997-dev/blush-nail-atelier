@@ -21,6 +21,7 @@ export function LoginForm({ onDone, next }: Props) {
   const [name, setName] = useState("");
   const [consent, setConsent] = useState(false);
   const [devCode, setDevCode] = useState<string>();
+  const [staging, setStaging] = useState(false);
   const [error, setError] = useState<string>();
   const [home, setHome] = useState("/account");
   const [pending, start] = useTransition();
@@ -40,6 +41,7 @@ export function LoginForm({ onDone, next }: Props) {
       if (!res.ok) return setError(res.error);
       setNormalized(res.phone!);
       setDevCode(res.devCode);
+      setStaging(!!res.staging);
       setStep("code");
     });
 
@@ -80,7 +82,7 @@ export function LoginForm({ onDone, next }: Props) {
       {step === "code" && (
         <form onSubmit={(e) => { e.preventDefault(); verify(); }} className="space-y-3">
           <p className="text-sm text-muted">
-            Code sent to <b className="text-ink">{normalized}</b>.{" "}
+            {staging ? <>Enter the 6-digit access code for <b className="text-ink">{normalized}</b>. (Preview site — SMS codes are switched on at launch.)</> : <>Code sent to <b className="text-ink">{normalized}</b>.</>}{" "}
             <button type="button" className="font-bold text-rose underline" onClick={() => { setStep("phone"); setCode(""); setError(undefined); }}>Change</button>
           </p>
           {devCode && (

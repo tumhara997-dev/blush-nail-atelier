@@ -10,7 +10,7 @@ if (!src) {
   process.exit(1);
 }
 const html = await readFile(src, "utf8");
-const outDir = path.resolve("seed-assets/gallery");
+const outDir = path.resolve("public/seed-gallery");
 await mkdir(outDir, { recursive: true });
 
 const re = /data:image\/(?:jpeg|png|webp);base64,([A-Za-z0-9+/=]+)"\s*alt="([^"]*)"/g;

@@ -33,7 +33,23 @@ const hashOtp = (phone: string, code: string) => sha256(`${secret()}:${phone}:${
 
 const ipLimited = (limit: number, windowMs: number) => rateLimited("auth", limit, windowMs);
 
-export type SendOtpResult = { ok: true; devCode?: string } | { ok: false; error: string };
+export type SendOtpResult = { ok: true; devCode?: string; staging?: boolean } | { ok: false; error: string };
+
+/**
+ * Staging access code: before an SMS provider is connected, a deployed site can't text codes.
+ * If STAGING_OTP_CODE (6 digits, kept secret) is set and SMS isn't configured, that code is used instead
+ * of sending an SMS. Remove it as soon as MSG91 is live.
+ */
+function stagingCode(): string | null {
+  const c = process.env.STAGING_OTP_CODE?.trim();
+  return !smsConfigured() && c && /^\d{6}$/.test(c) ? c : null;
+}
+
+/** OWNER_PHONE is always the salon owner (lets the first owner sign in on a fresh production database). */
+function isOwnerPhone(phone: string): boolean {
+  const owner = process.env.OWNER_PHONE?.replace(/[\s-]/g, "");
+  return !!owner && (owner === phone || `+91${owner.replace(/^(\+?91|0)/, "")}` === phone);
+}
 
 export async function sendOtp(phone: string): Promise<SendOtpResult> {
   if (await ipLimited(10, 60 * 60_000)) return { ok: false, error: "Too many attempts. Please try again later." };
@@ -46,12 +62,14 @@ export async function sendOtp(phone: string): Promise<SendOtpResult> {
     return { ok: false, error: "Too many codes requested. Please wait 10 minutes." };
   }
 
-  const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+  const staging = stagingCode();
+  const code = staging ?? String(randomInt(0, 1_000_000)).padStart(6, "0");
   await db().insert(schema.otpCodes).values({
     phone,
     codeHash: hashOtp(phone, code),
     expiresAt: new Date(Date.now() + OTP_TTL_MIN * 60_000),
   });
+  if (staging) return { ok: true, staging: true };
   try {
     await sendOtpSms(phone, code);
   } catch (e) {
@@ -92,6 +110,13 @@ export async function verifyOtp(phone: string, code: string, opts: { consent: bo
     isNew = true;
   }
   if (user.isBlocked || user.deletedAt) return { ok: false, error: "This account is not active. Please contact the salon." };
+  if (isOwnerPhone(phone) && user.role !== "OWNER") {
+    [user] = await db().update(schema.users).set({ role: "OWNER", name: user.name ?? "Salon Owner" }).where(eq(schema.users.id, user.id)).returning();
+    // On a fresh install, link the first (unlinked) artist to the owner.
+    const linked = await db().select({ id: schema.staff.id }).from(schema.staff).where(eq(schema.staff.userId, user.id)).limit(1);
+    const [free] = linked.length ? [] : await db().select({ id: schema.staff.id }).from(schema.staff).where(isNull(schema.staff.userId)).orderBy(schema.staff.sortOrder).limit(1);
+    if (free) await db().update(schema.staff).set({ userId: user.id }).where(eq(schema.staff.id, free.id));
+  }
 
   if (isNew || opts.consent) {
     const { policies } = await getSettings("policies");

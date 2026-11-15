@@ -90,7 +90,7 @@ export async function deleteMyAccount(form: FormData) {
       await transition(a.id, "CANCELLED", { id: user.id, role: user.role }, { cancelReason: "Account deleted" });
     }
   }
-  await deleteMedia(await db().select({ id: schema.media.id, path: schema.media.path }).from(schema.media).where(eq(schema.media.ownerId, user.id)));
+  await deleteMedia(await db().select({ id: schema.media.id }).from(schema.media).where(eq(schema.media.ownerId, user.id)));
   await db()
     .update(schema.users)
     .set({ name: null, email: null, phone: `deleted:${user.id}`, nailPrefs: null, allergies: null, staffNotes: null, marketingOptIn: false, deletedAt: now, updatedAt: now })

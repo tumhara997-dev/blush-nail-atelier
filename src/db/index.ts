@@ -11,8 +11,9 @@ import * as schema from "./schema";
 
 /**
  * Database access.
- * - DATABASE_URL set   → real Postgres (production / staging)
- * - DATABASE_URL empty → embedded Postgres (PGlite) in ./.data/pglite for zero-setup local dev.
+ * - DATABASE_URL or NETLIFY_DB_URL set → real Postgres (production / staging)
+ * - neither set → embedded Postgres (PGlite) in ./.data/pglite for zero-setup local dev.
+ * On Netlify, schema changes are applied by the deploy from netlify/database/migrations (never at runtime).
  *   PGlite is single-process: stop `npm run dev` before running db:* scripts.
  * Both expose the same Drizzle query API, so app code never cares which one is active.
  */
@@ -24,9 +25,11 @@ const holder: Holder = (g.__blush ??= {});
 
 function init(): DB {
   if (holder.db) return holder.db;
-  const url = process.env.DATABASE_URL;
+  // DATABASE_URL (any Postgres) wins; on Netlify the hosted database provides NETLIFY_DB_URL automatically.
+  const url = process.env.DATABASE_URL || process.env.NETLIFY_DB_URL;
   if (url) {
-    const client = postgres(url, { max: 10, prepare: false });
+    // Small pool: serverless functions run many short-lived instances.
+    const client = postgres(url, { max: process.env.NETLIFY ? 3 : 10, prepare: false, idle_timeout: 20 });
     holder.db = drizzlePostgres(client, { schema });
     holder.close = () => client.end();
     holder.kind = "postgres";

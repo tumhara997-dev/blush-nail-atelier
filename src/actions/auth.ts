@@ -7,12 +7,12 @@ import { db, schema } from "@/db";
 import { normalizeIndianMobile } from "@/lib/phone";
 import { destroySession, getCurrentUser, isStaff, sendOtp, verifyOtp } from "@/server/auth";
 
-export async function requestOtp(rawPhone: string): Promise<{ ok: boolean; error?: string; phone?: string; devCode?: string }> {
+export async function requestOtp(rawPhone: string): Promise<{ ok: boolean; error?: string; phone?: string; devCode?: string; staging?: boolean }> {
   const phone = normalizeIndianMobile(String(rawPhone ?? ""));
   if (!phone) return { ok: false, error: "Please enter a valid 10-digit Indian mobile number." };
   const res = await sendOtp(phone);
   if (!res.ok) return { ok: false, error: res.error };
-  return { ok: true, phone, devCode: res.devCode };
+  return { ok: true, phone, devCode: res.devCode, staging: res.staging };
 }
 
 export async function confirmOtp(phone: string, code: string, consent: boolean): Promise<{ ok: boolean; error?: string; needsName?: boolean; home?: string }> {

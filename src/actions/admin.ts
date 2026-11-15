@@ -231,7 +231,7 @@ export async function adminUpdateGalleryItem(form: FormData) {
   const [item] = await db().select().from(schema.galleryItems).where(eq(schema.galleryItems.id, id));
   if (!item) return;
   if (op === "delete") {
-    const [m] = await db().select({ id: schema.media.id, path: schema.media.path }).from(schema.media).where(eq(schema.media.id, item.mediaId));
+    const [m] = await db().select({ id: schema.media.id }).from(schema.media).where(eq(schema.media.id, item.mediaId));
     await db().update(schema.artStyles).set({ coverMediaId: null }).where(eq(schema.artStyles.coverMediaId, item.mediaId));
     if (m) await deleteMedia([m]); // cascades to gallery item
   } else if (op === "cover" && item.artStyleId) {

@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { getCurrentUser } from "@/server/auth";
 import { createAppointment } from "@/server/appointments";
-import { checkUpload, readMediaFile, saveImageBuffer, saveUpload } from "@/server/media";
+import { checkUpload, saveUpload } from "@/server/media";
 import { isValidDateString } from "@/lib/time";
 import { rateLimited } from "@/server/rate-limit";
 
@@ -62,13 +62,13 @@ export async function createBooking(form: FormData): Promise<BookingResult> {
   if (lookId.success) {
     try {
       const [g] = await db()
-        .select({ path: schema.media.path })
+        .select({ data: schema.media.data, path: schema.media.path, mime: schema.media.mime, width: schema.media.width, height: schema.media.height, bytes: schema.media.bytes })
         .from(schema.galleryItems)
         .innerJoin(schema.media, eq(schema.media.id, schema.galleryItems.mediaId))
         .where(and(eq(schema.galleryItems.id, lookId.data), eq(schema.galleryItems.isPublished, true)))
         .limit(1);
-      const file = g ? await readMediaFile(g.path) : null;
-      if (file) await saveImageBuffer(file, "INSPIRATION", { ownerId: user.id, appointmentId: res.value.id });
+      // Same bytes (or same static file), attached to this booking as a private inspiration photo.
+      if (g) await db().insert(schema.media).values({ ...g, kind: "INSPIRATION", ownerId: user.id, appointmentId: res.value.id });
     } catch (e) {
       console.error("Reference look copy failed", e);
     }
