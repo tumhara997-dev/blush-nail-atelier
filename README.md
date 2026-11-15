@@ -25,7 +25,7 @@ No database server is needed for local dev: with `DATABASE_URL` empty the app us
 | `npm run typecheck` | TypeScript |
 | `npm run db:generate` | New migration after editing `src/db/schema.ts` |
 | `npm run db:migrate` / `db:seed` / `db:setup` | Apply migrations / seed / both |
-| `npm run gallery:extract -- <demo.html>` | Re-extract photos from the old demo file into `seed-assets/gallery` |
+| `npm run gallery:extract -- <demo.html>` | Re-extract photos from the old demo file into `public/seed-gallery` |
 
 ## What's included
 
@@ -65,12 +65,23 @@ drizzle/              SQL migrations
 tests/                vitest
 ```
 
-## Going live
+## Hosting (Netlify)
 
-1. **Database** — create Postgres (Supabase / Neon / any), set `DATABASE_URL`, run `npm run db:setup` once with the owner's real `OWNER_PHONE`.
-2. **Photo storage** — uploads are written to `STORAGE_DIR` on local disk. Host on something with a **persistent disk** (Railway, Render, Fly.io, a VPS) for Phase 1. Serverless hosts like Vercel have no persistent disk: add an S3/Supabase-Storage adapter in `src/server/media.ts` before deploying there.
-3. **SMS OTP (required for login in production)** — MSG91 account, DLT entity + OTP template registration (TRAI), then set `MSG91_AUTH_KEY` and `MSG91_OTP_TEMPLATE_ID`. Without it, production login refuses to send codes.
-4. **WhatsApp** — Meta WhatsApp Cloud API (or a BSP). Set `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`. Create and get approved these **utility templates** (body variables in this order):
+Live preview: **https://blush-nail-atelier.netlify.app** (Netlify project `blush-nail-atelier`).
+
+- **Database** — Netlify Database (managed Postgres). It's provisioned because `@netlify/database` is installed, and the app reads `NETLIFY_DB_URL` automatically. Every deploy applies `netlify/database/migrations/` — the schema plus a one-time `seed_content` migration (menu, styles, gallery, settings).
+  After changing `src/db/schema.ts`: `npm run db:generate`, then `npx tsx scripts/netlify-migrations.ts`, commit, deploy. Never edit a migration that's already been applied.
+- **Photos** — uploads are stored in Postgres; starter photos are static files in `public/seed-gallery/`.
+- **Scheduled jobs** — `netlify/functions/cron-reminders.mjs` (hourly) and `cron-expire.mjs` (every 15 min) call `/api/cron/*` with `CRON_SECRET`.
+- **Environment variables** (Netlify → Project configuration → Environment variables): `AUTH_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_SITE_URL`, `OWNER_PHONE`, and while SMS isn't connected `STAGING_OTP_CODE`.
+- **Owner login** — whoever signs in with `OWNER_PHONE` becomes the owner. Set it to the owner's real mobile number.
+- **Staging access code** — until MSG91 is set up, the live site can't text codes, so `STAGING_OTP_CODE` (a secret 6-digit code) works as the login code for any number. **Delete it once SMS is live.**
+- **Redeploy** — from this folder: ask Claude to deploy, or connect the Git repo in Netlify for automatic deploys on every push.
+
+## Going live (real customers)
+
+1. **SMS OTP** — MSG91 account, DLT entity + OTP template registration (TRAI), then set `MSG91_AUTH_KEY` and `MSG91_OTP_TEMPLATE_ID` and **remove `STAGING_OTP_CODE`**.
+2. **WhatsApp** — Meta WhatsApp Cloud API (or a BSP). Set `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`. Create and get approved these **utility templates** (body variables in this order):
 
    | Template | {{1}} | {{2}} | {{3}} | {{4}} |
    |---|---|---|---|---|
@@ -83,10 +94,10 @@ tests/                vitest
    | `staff_new_booking` | name | service | date & time | ref |
 
    Without WhatsApp configured, messages are logged and saved in the `notifications` table.
-5. **Scheduled jobs** — call with `Authorization: Bearer $CRON_SECRET`: `GET /api/cron/reminders` hourly and `GET /api/cron/expire` every 15 minutes. `vercel.json` wires these on Vercel; elsewhere use any cron service.
-6. **Secrets** — set `AUTH_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_SITE_URL` (https domain).
-7. **In the dashboard** — Settings (address, phone, WhatsApp, map, Instagram), Services (real prices and durations: the seeded durations are placeholders and "price on enquiry" is used wherever the demo had no price), Staff, opening hours, and review the policy text.
+3. **Owner** — set `OWNER_PHONE` to the owner's real number and sign in once.
+4. **Domain** — add the salon's domain in Netlify (Domain management) and update `NEXT_PUBLIC_SITE_URL`.
+5. **In the dashboard** — Settings (address, phone, WhatsApp, map, Instagram), Services (real prices and durations: the seeded durations are placeholders and "price on enquiry" is used wherever the demo had no price), Staff, opening hours, and review the policy text.
 
 ## Not in Phase 1 (see blueprint roadmap)
 
-Online deposits (Razorpay), verified reviews, two-way chat inbox (web + WhatsApp webhooks), customer self-reschedule (they're pointed to WhatsApp; staff can move bookings), per-artist weekly shifts (artists work salon hours; use time off for leave), email notifications, cloud photo storage adapter, Redis-backed rate limits for multi-server hosting, loyalty/packages/gift cards.
+Online deposits (Razorpay), verified reviews, two-way chat inbox (web + WhatsApp webhooks), customer self-reschedule (they're pointed to WhatsApp; staff can move bookings), per-artist weekly shifts (artists work salon hours; use time off for leave), email notifications, Redis-backed rate limits for multi-server hosting, loyalty/packages/gift cards.

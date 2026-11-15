@@ -6,6 +6,11 @@
   NODE_VERSION = "22"
   NEXT_TELEMETRY_DISABLED = "1"
 
+# Netlify's Next.js runtime (OpenNext). Usually auto-added for sites set up in the UI; declared here so
+# API/CLI-created projects get it too. Not pinned — Netlify keeps it up to date.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
 # Seed photos never change — let browsers and the CDN keep them.
 [[headers]]
   for = "/seed-gallery/*"
