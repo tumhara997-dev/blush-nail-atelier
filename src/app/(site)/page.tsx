@@ -1,3 +1,4 @@
+import { mediaUrl } from "@/lib/media-url";
 import Link from "next/link";
 import { getCatalog } from "@/server/catalog";
 import { getArtStyles, getGallery } from "@/server/gallery";
@@ -17,7 +18,7 @@ function pick(items: Photo[], caption: string, fallback: number): Photo | undefi
 function Img({ p, className, priority }: { p?: Photo; className: string; priority?: boolean }) {
   if (!p) return <div className={`bg-petal ${className}`} />;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={`/media/${p.mediaId}`} alt={p.caption} className={`object-cover ${className}`} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} />;
+  return <img src={mediaUrl(p.mediaId)} alt={p.caption} className={`object-cover ${className}`} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} />;
 }
 
 export default async function HomePage() {
@@ -183,7 +184,7 @@ export default async function HomePage() {
                 <div className="arch aspect-[3/4] overflow-hidden bg-pale">
                   {s.coverMediaId ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={`/media/${s.coverMediaId}`} alt="" loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                    <img src={mediaUrl(s.coverMediaId)} alt="" loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
                   ) : (
                     <div className="flex h-full items-center justify-center bg-gradient-to-b from-pale to-petal">
                       <Bow className="h-8 w-12 text-rose/50" />

@@ -1,3 +1,4 @@
+import { mediaUrl } from "@/lib/media-url";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getGallery } from "@/server/gallery";
@@ -54,7 +55,7 @@ export default async function BridalPage() {
             {photos.slice(0, 2).map((p, i) =>
               p ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img key={p.id} src={`/media/${p.mediaId}`} alt={p.caption} className={`w-full object-cover ${i === 0 ? "arch aspect-[3/4.4]" : "mb-14 aspect-[3/4] rounded-[24px]"}`} />
+                <img key={p.id} src={mediaUrl(p.mediaId)} alt={p.caption} className={`w-full object-cover ${i === 0 ? "arch aspect-[3/4.4]" : "mb-14 aspect-[3/4] rounded-[24px]"}`} />
               ) : null,
             )}
           </div>
@@ -101,7 +102,7 @@ export default async function BridalPage() {
           {photos.map((p, i) =>
             p ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img key={p.id} src={`/media/${p.mediaId}`} alt={p.caption} loading="lazy" className={`aspect-[3/4] w-full object-cover ${i % 2 ? "rounded-[24px] lg:mt-12" : "arch"}`} />
+              <img key={p.id} src={mediaUrl(p.mediaId)} alt={p.caption} loading="lazy" className={`aspect-[3/4] w-full object-cover ${i % 2 ? "rounded-[24px] lg:mt-12" : "arch"}`} />
             ) : null,
           )}
         </section>

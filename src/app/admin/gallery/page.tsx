@@ -1,3 +1,4 @@
+import { mediaUrl } from "@/lib/media-url";
 import { getArtStyles, getGallery } from "@/server/gallery";
 import { adminUpdateGalleryItem, adminUploadGallery } from "@/actions/admin";
 import { ActionForm, Submit } from "@/components/forms";
@@ -43,7 +44,7 @@ export default async function AdminGalleryPage() {
         {items.map((g) => (
           <div key={g.id} className={`card overflow-hidden ${g.isPublished ? "" : "opacity-70"}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`/media/${g.mediaId}`} alt={g.caption} loading="lazy" className="h-48 w-full object-cover" />
+            <img src={mediaUrl(g.mediaId)} alt={g.caption} loading="lazy" className="h-48 w-full object-cover" />
             <form action={adminUpdateGalleryItem} className="space-y-2 p-3">
               <input type="hidden" name="id" value={g.id} />
               <input name="caption" defaultValue={g.caption} className="input py-1.5 text-sm" aria-label="Caption" />

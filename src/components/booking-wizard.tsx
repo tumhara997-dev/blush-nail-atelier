@@ -1,4 +1,5 @@
 "use client";
+import { mediaUrl } from "@/lib/media-url";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -141,7 +142,7 @@ export function BookingWizard({ categories, days, initialServiceId, initialNote,
       {look && (
         <div className="card flex items-center gap-4 p-3 pr-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/media/${look.mediaId}`} alt="" className="h-20 w-16 rounded-xl object-cover" />
+          <img src={mediaUrl(look.mediaId)} alt="" className="h-20 w-16 rounded-xl object-cover" />
           <div className="flex-1">
             <div className="text-[11px] uppercase tracking-[0.2em] text-gold">Your reference look</div>
             <div className="font-serif text-xl text-plum">{look.caption}</div>

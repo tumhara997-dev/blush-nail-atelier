@@ -1,3 +1,4 @@
+import { mediaUrl } from "@/lib/media-url";
 import Link from "next/link";
 
 type Item = { id: string; caption: string; mediaId: string; width: number | null; height: number | null };
@@ -11,7 +12,7 @@ export function GalleryGrid({ items, customServiceId }: { items: Item[]; customS
         <figure key={g.id} className="group relative mb-4 break-inside-avoid overflow-hidden sm:mb-5">
           {/* eslint-disable-next-line @next/next/no-img-element -- already resized & re-encoded on upload */}
           <img
-            src={`/media/${g.mediaId}`}
+            src={mediaUrl(g.mediaId)}
             alt={g.caption}
             width={g.width ?? 900}
             height={g.height ?? 1200}

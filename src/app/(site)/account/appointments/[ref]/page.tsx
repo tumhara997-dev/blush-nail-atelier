@@ -1,3 +1,4 @@
+import { mediaUrl } from "@/lib/media-url";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/server/auth";
@@ -61,7 +62,7 @@ export default async function MyAppointmentPage({ params }: { params: Promise<{ 
           <div className="mt-4 flex gap-2">
             {a.photos.map((p) => (
               // eslint-disable-next-line @next/next/no-img-element
-              <img key={p.id} src={`/media/${p.id}`} alt="Inspiration" className="h-24 w-24 rounded-xl object-cover" />
+              <img key={p.id} src={mediaUrl(p.id)} alt="Inspiration" className="h-24 w-24 rounded-xl object-cover" />
             ))}
           </div>
         )}

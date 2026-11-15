@@ -6,7 +6,7 @@ import { mediaBytes } from "@/server/media";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Serves stored photos. Gallery photos are public; inspiration photos only to their owner and staff. */
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!UUID.test(id)) return new Response("Not found", { status: 404 });
 
@@ -20,8 +20,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   }
 
   // Seed photos ship as public static files in /public — hand them to the CDN.
+  // Relative Location: behind a CDN, req.url can carry an internal host, so never build an absolute URL from it.
   if (!m.data && m.path?.startsWith("/")) {
-    return new Response(null, { status: 308, headers: { Location: new URL(m.path, req.url).toString(), "Cache-Control": isPublic ? "public, max-age=31536000, immutable" : "private, max-age=3600" } });
+    return new Response(null, { status: 308, headers: { Location: m.path, "Cache-Control": isPublic ? "public, max-age=86400" : "private, max-age=3600" } });
   }
 
   const file = await mediaBytes(m);

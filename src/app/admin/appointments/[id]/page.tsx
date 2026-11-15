@@ -1,3 +1,4 @@
+import { mediaUrl } from "@/lib/media-url";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { asc } from "drizzle-orm";
@@ -67,9 +68,9 @@ export default async function AdminAppointmentPage({ params }: { params: Promise
                 <div className="label">Inspiration photos</div>
                 <div className="flex flex-wrap gap-2">
                   {d.photos.map((p) => (
-                    <a key={p.id} href={`/media/${p.id}`} target="_blank" rel="noopener">
+                    <a key={p.id} href={mediaUrl(p.id)} target="_blank" rel="noopener">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/media/${p.id}`} alt="Inspiration" className="h-32 w-32 rounded-xl object-cover" />
+                      <img src={mediaUrl(p.id)} alt="Inspiration" className="h-32 w-32 rounded-xl object-cover" />
                     </a>
                   ))}
                 </div>

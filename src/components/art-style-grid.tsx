@@ -1,3 +1,4 @@
+import { mediaUrl } from "@/lib/media-url";
 import Link from "next/link";
 
 type Style = { id: string; name: string; slug: string; coverMediaId: string | null };
@@ -13,7 +14,7 @@ export function ArtStyleGrid({ styles }: { styles: Style[] }) {
           <Link key={s.id} href={`/gallery?style=${s.slug}`} className="group text-center">
             <div className="arch aspect-[3/4] overflow-hidden bg-pale">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/media/${s.coverMediaId}`} alt="" loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+              <img src={mediaUrl(s.coverMediaId)} alt="" loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
             </div>
             <div className="mt-4 font-serif text-[22px] text-plum transition group-hover:text-rose">{s.name}</div>
           </Link>
