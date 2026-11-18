@@ -7,6 +7,8 @@ import { db, schema } from "@/db";
 import { sendOtpSms, smsConfigured } from "./integrations/sms";
 import { getSettings } from "./settings";
 import { rateLimited } from "./rate-limit";
+import { verifyFirebasePhoneToken } from "./firebase";
+import { normalizeIndianMobile } from "@/lib/phone";
 
 export type Role = (typeof schema.roleEnum.enumValues)[number];
 export type SessionUser = typeof schema.users.$inferSelect;
@@ -101,7 +103,21 @@ export async function verifyOtp(phone: string, code: string, opts: { consent: bo
     return { ok: false, error: "Incorrect code. Please check and try again." };
   }
   await db().update(schema.otpCodes).set({ consumedAt: new Date() }).where(eq(schema.otpCodes.id, otp.id));
+  return signInVerifiedPhone(phone, opts);
+}
 
+/** Firebase Phone Auth: Google verified the number; check its token, then sign in like any OTP login. */
+export async function verifyFirebaseLogin(idToken: string, opts: { consent: boolean }): Promise<VerifyOtpResult & { phone?: string }> {
+  if (await ipLimited(30, 60 * 60_000)) return { ok: false, error: "Too many attempts. Please try again later." };
+  const raw = await verifyFirebasePhoneToken(idToken);
+  const phone = raw ? normalizeIndianMobile(raw) : null;
+  if (!phone) return { ok: false, error: raw ? "Please use an Indian mobile number." : "Verification expired. Please request a new code." };
+  const res = await signInVerifiedPhone(phone, opts);
+  return res.ok ? { ...res, phone } : res;
+}
+
+/** The phone number is proven (our OTP or Firebase) — find or create the account and start a session. */
+async function signInVerifiedPhone(phone: string, opts: { consent: boolean }): Promise<VerifyOtpResult> {
   let [user] = await db().select().from(schema.users).where(eq(schema.users.phone, phone)).limit(1);
   let isNew = false;
   if (!user) {

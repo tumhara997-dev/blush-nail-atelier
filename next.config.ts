@@ -10,13 +10,14 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      // Next.js injects inline bootstrap scripts; move to nonce-based CSP when adding third-party scripts.
-      "script-src 'self' 'unsafe-inline'" + (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
+      // Next.js injects inline bootstrap scripts; Google hosts reCAPTCHA (used by Firebase phone login).
+      "script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://apis.google.com" + (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
+      "img-src 'self' data: blob: https://www.gstatic.com https://www.google.com",
       "font-src 'self'",
-      "connect-src 'self'",
-      "frame-src https://www.google.com https://maps.google.com",
+      // Firebase Auth APIs (send/verify SMS code, exchange tokens) + reCAPTCHA.
+      "connect-src 'self' https://*.googleapis.com https://www.google.com",
+      "frame-src https://www.google.com https://maps.google.com https://recaptcha.google.com https://*.firebaseapp.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

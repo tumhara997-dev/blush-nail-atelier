@@ -80,7 +80,8 @@ Live preview: **https://blush-nail-atelier.netlify.app** (Netlify project `blush
 
 ## Going live (real customers)
 
-1. **SMS OTP** — MSG91 account, DLT entity + OTP template registration (TRAI), then set `MSG91_AUTH_KEY` and `MSG91_OTP_TEMPLATE_ID` and **remove `STAGING_OTP_CODE`**.
+1. **Login codes — Firebase Phone Auth (no DLT)** — Firebase console: create a project → Authentication → Sign-in method → enable **Phone** → Settings → Authorized domains → add the site's domain → upgrade to the **Blaze** plan (card required; Google doesn't bill the first 10 SMS/day, India is $0.07/SMS after that — set a budget alert). Copy the web app config into Netlify as `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, redeploy, then **remove `STAGING_OTP_CODE`**. The server verifies Google's ID token (`src/server/firebase.ts`) and starts its own session.
+   *Alternative (needs DLT):*  MSG91 account, DLT entity + OTP template registration (TRAI), then set `MSG91_AUTH_KEY` and `MSG91_OTP_TEMPLATE_ID` and **remove `STAGING_OTP_CODE`**.
 2. **WhatsApp** — Meta WhatsApp Cloud API (or a BSP). Set `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`. Create and get approved these **utility templates** (body variables in this order):
 
    | Template | {{1}} | {{2}} | {{3}} | {{4}} |

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "@/db";
 import { normalizeIndianMobile } from "@/lib/phone";
-import { destroySession, getCurrentUser, isStaff, sendOtp, verifyOtp } from "@/server/auth";
+import { destroySession, getCurrentUser, isStaff, sendOtp, verifyFirebaseLogin, verifyOtp } from "@/server/auth";
 
 export async function requestOtp(rawPhone: string): Promise<{ ok: boolean; error?: string; phone?: string; devCode?: string; staging?: boolean }> {
   const phone = normalizeIndianMobile(String(rawPhone ?? ""));
@@ -19,6 +19,14 @@ export async function confirmOtp(phone: string, code: string, consent: boolean):
   const normalized = normalizeIndianMobile(String(phone ?? ""));
   if (!normalized || !/^\d{6}$/.test(String(code ?? "").trim())) return { ok: false, error: "Enter the 6-digit code." };
   const res = await verifyOtp(normalized, code, { consent: Boolean(consent) });
+  if (!res.ok) return { ok: false, error: res.error };
+  const user = await getCurrentUser();
+  return { ok: true, needsName: res.needsName, home: isStaff(user) ? "/admin" : "/account" };
+}
+
+/** Firebase Phone Auth finished in the browser — exchange Google's ID token for our session. */
+export async function confirmFirebaseLogin(idToken: string, consent: boolean): Promise<{ ok: boolean; error?: string; needsName?: boolean; home?: string }> {
+  const res = await verifyFirebaseLogin(String(idToken ?? ""), { consent: Boolean(consent) });
   if (!res.ok) return { ok: false, error: res.error };
   const user = await getCurrentUser();
   return { ok: true, needsName: res.needsName, home: isStaff(user) ? "/admin" : "/account" };

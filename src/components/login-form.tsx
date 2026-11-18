@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { confirmOtp, requestOtp, saveName } from "@/actions/auth";
+import type { ConfirmationResult, RecaptchaVerifier } from "firebase/auth";
+import { confirmFirebaseLogin, confirmOtp, requestOtp, saveName } from "@/actions/auth";
+import { firebaseEnabled, firebaseErrorMessage, loadFirebaseAuth } from "@/lib/firebase-client";
+import { normalizeIndianMobile } from "@/lib/phone";
 
 type Props = {
   /** Called after a successful login instead of navigating (used inside the booking flow). */
@@ -34,9 +37,38 @@ export function LoginForm({ onDone, next }: Props) {
     }
   };
 
+  // ── Firebase Phone Auth (when configured): Google sends the SMS and checks the code ──
+  const recaptchaHost = useRef<HTMLDivElement>(null);
+  const verifierRef = useRef<RecaptchaVerifier | null>(null);
+  const confirmationRef = useRef<ConfirmationResult | null>(null);
+  const idTokenRef = useRef<string | null>(null);
+
+  const sendWithFirebase = async (e164: string) => {
+    const { auth, mod } = await loadFirebaseAuth();
+    // Fresh invisible reCAPTCHA each time (a used one can't be reused).
+    verifierRef.current?.clear();
+    const el = document.createElement("div");
+    recaptchaHost.current?.replaceChildren(el);
+    verifierRef.current = new mod.RecaptchaVerifier(auth, el, { size: "invisible" });
+    confirmationRef.current = await mod.signInWithPhoneNumber(auth, e164, verifierRef.current);
+    idTokenRef.current = null;
+  };
+
   const send = () =>
     start(async () => {
       setError(undefined);
+      if (firebaseEnabled) {
+        const e164 = normalizeIndianMobile(phone);
+        if (!e164) return setError("Please enter a valid 10-digit Indian mobile number.");
+        try {
+          await sendWithFirebase(e164);
+        } catch (err) {
+          return setError(firebaseErrorMessage(err));
+        }
+        setNormalized(e164);
+        setStep("code");
+        return;
+      }
       const res = await requestOtp(phone);
       if (!res.ok) return setError(res.error);
       setNormalized(res.phone!);
@@ -48,7 +80,27 @@ export function LoginForm({ onDone, next }: Props) {
   const verify = () =>
     start(async () => {
       setError(undefined);
-      const res = await confirmOtp(normalized, code, consent);
+      let res;
+      if (firebaseEnabled) {
+        // Confirm with Google once; keep the token so a consent retry doesn't need a new SMS.
+        if (!idTokenRef.current) {
+          if (!confirmationRef.current) return setError("Please request a code first.");
+          try {
+            const cred = await confirmationRef.current.confirm(code);
+            idTokenRef.current = await cred.user.getIdToken();
+          } catch (err) {
+            return setError(firebaseErrorMessage(err));
+          }
+        }
+        res = await confirmFirebaseLogin(idTokenRef.current, consent);
+        if (res.ok) {
+          idTokenRef.current = null;
+          // Our own session cookie is set; Firebase's browser session isn't needed.
+          loadFirebaseAuth().then(({ auth, mod }) => mod.signOut(auth)).catch(() => {});
+        }
+      } else {
+        res = await confirmOtp(normalized, code, consent);
+      }
       if (!res.ok) return setError(res.error);
       setHome(res.home ?? "/account");
       if (res.needsName) setStep("name");
@@ -116,6 +168,14 @@ export function LoginForm({ onDone, next }: Props) {
       )}
 
       {error && <p className="error-box" role="alert">{error}</p>}
+      {/* Invisible reCAPTCHA mounts here (Firebase); shows the small "protected by reCAPTCHA" badge only when used. */}
+      <div ref={recaptchaHost} />
+      {firebaseEnabled && step === "phone" && (
+        <p className="text-[11px] leading-4 text-muted/80">
+          Protected by reCAPTCHA — Google&apos;s <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" className="underline">Privacy Policy</a> and{" "}
+          <a href="https://policies.google.com/terms" target="_blank" rel="noopener" className="underline">Terms</a> apply.
+        </p>
+      )}
     </div>
   );
 }
