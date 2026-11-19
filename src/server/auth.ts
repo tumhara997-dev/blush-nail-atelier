@@ -21,17 +21,32 @@ const OTP_MAX_ATTEMPTS = 5;
 const STAFF_ROLES: Role[] = ["STAFF", "ADMIN", "OWNER"];
 const ADMIN_ROLES: Role[] = ["ADMIN", "OWNER"];
 
-function secret(): string {
+/**
+ * Server secret for hashing OTP codes. Uses AUTH_SECRET when set; otherwise (production) the app
+ * generates a random secret once and keeps it in the database, so a fresh deploy works without
+ * anyone having to paste a secret into the host's settings.
+ */
+let dbSecret: Promise<string> | null = null;
+async function secret(): Promise<string> {
   const s = process.env.AUTH_SECRET;
-  if (!s || s === "change-me") {
-    if (process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET must be set in production");
-    return "dev-only-secret";
-  }
-  return s;
+  if (s && s !== "change-me") return s;
+  if (process.env.NODE_ENV !== "production") return "dev-only-secret";
+  dbSecret ??= (async () => {
+    const key = "auth_secret";
+    await db().insert(schema.settings).values({ key, value: { v: randomBytes(32).toString("hex") } }).onConflictDoNothing();
+    const [row] = await db().select().from(schema.settings).where(eq(schema.settings.key, key)).limit(1);
+    const v = (row?.value as { v?: string } | undefined)?.v;
+    if (!v) throw new Error("Could not load the server secret");
+    return v;
+  })().catch((e) => {
+    dbSecret = null;
+    throw e;
+  });
+  return dbSecret;
 }
 
 const sha256 = (v: string) => createHash("sha256").update(v).digest("hex");
-const hashOtp = (phone: string, code: string) => sha256(`${secret()}:${phone}:${code}`);
+const hashOtp = async (phone: string, code: string) => sha256(`${await secret()}:${phone}:${code}`);
 
 const ipLimited = (limit: number, windowMs: number) => rateLimited("auth", limit, windowMs);
 
@@ -68,7 +83,7 @@ export async function sendOtp(phone: string): Promise<SendOtpResult> {
   const code = staging ?? String(randomInt(0, 1_000_000)).padStart(6, "0");
   await db().insert(schema.otpCodes).values({
     phone,
-    codeHash: hashOtp(phone, code),
+    codeHash: await hashOtp(phone, code),
     expiresAt: new Date(Date.now() + OTP_TTL_MIN * 60_000),
   });
   if (staging) return { ok: true, staging: true };
@@ -97,7 +112,7 @@ export async function verifyOtp(phone: string, code: string, opts: { consent: bo
   if (otp.attempts >= OTP_MAX_ATTEMPTS) return { ok: false, error: "Too many wrong attempts. Please request a new code." };
 
   const a = Buffer.from(otp.codeHash, "hex");
-  const b = Buffer.from(hashOtp(phone, code.trim()), "hex");
+  const b = Buffer.from(await hashOtp(phone, code.trim()), "hex");
   if (a.length !== b.length || !timingSafeEqual(a, b)) {
     await db().update(schema.otpCodes).set({ attempts: otp.attempts + 1 }).where(eq(schema.otpCodes.id, otp.id));
     return { ok: false, error: "Incorrect code. Please check and try again." };

@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/site-url";
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
 import "./globals.css";
@@ -11,7 +12,7 @@ const display = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", 
 const body = Jost({ subsets: ["latin"], weight: ["300", "400", "500"], variable: "--font-body", display: "swap" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(siteUrl()),
   title: { default: "BLUSH — Nail Atelier · Extensions, Gel & Nail Art", template: "%s · BLUSH" },
   description:
     "Acrylic, gel and soft gel extensions, gel polish, bridal and custom nail art. See our real work, check live availability and book your appointment at BLUSH.",

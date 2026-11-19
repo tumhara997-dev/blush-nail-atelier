@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/site-url";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { formatPaise } from "@/lib/money";
@@ -76,7 +77,7 @@ export async function notifyAppointment(appointmentId: string, template: Templat
       name: row.u.name ?? "there",
       service: items.map((i) => i.name).join(" + ") || "your appointment",
       salon: salon.name,
-      site: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+      site: siteUrl(),
     };
     // Demo customers (sample data for showing the admin) never receive real messages.
     const isDemo = row.u.staffNotes?.startsWith(DEMO_MARK) ?? false;

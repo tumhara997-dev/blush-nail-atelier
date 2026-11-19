@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/site-url";
 import { mediaUrl } from "@/lib/media-url";
 import Link from "next/link";
 import { getCatalog } from "@/server/catalog";
@@ -34,7 +35,7 @@ export default async function HomePage() {
   const bridal2 = pick(gallery, "crystals", 4);
   const featured = gallery.filter((g) => g.isFeatured).slice(0, 8);
   const custom = services.find((s) => s.slug === "custom-nail-art");
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = siteUrl();
 
   const jsonLd = {
     "@context": "https://schema.org",
